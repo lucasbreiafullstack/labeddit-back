@@ -5,7 +5,7 @@
 ---
 
 <p align="center">
-  <img alt="Logo Labeddit" src="./src/assets/Group 1.png" />
+  <img alt="Logo Labeddit" src="./src/assets/homelogowhite.png" />
 </p>
 
 ---
@@ -58,7 +58,7 @@ Para instalar as dependências e iniciar o projeto, você pode utilizar o Yarn o
 
 ## Deploy do projeto
 
-Link Deploy Front-end:  <br>
+Link Deploy Front-end: https://labeddit-front-pi.vercel.app/  <br>
 Link Documentação Postman: https://documenter.getpostman.com/view/26572176/2s9YJdUMeh
 
 <h4 align="center">
