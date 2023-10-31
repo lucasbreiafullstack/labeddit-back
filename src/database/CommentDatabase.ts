@@ -9,19 +9,15 @@ export class CommentDatabase extends BaseDatabase {
   public static TABLE_COMMENTS = "comments";
   public static TABLE_LIKES_DISLIKES = "likes_dislikes_comments";
 
-  public insertComment = async (
-    newCommentDB: CommentDB
-  ): Promise<void> => {
-
+  // Método para inserir um novo comentário
+  public insertComment = async (newCommentDB: CommentDB): Promise<void> => {
     await BaseDatabase
       .connection(CommentDatabase.TABLE_COMMENTS)
       .insert(newCommentDB)
   }
 
-  public findComments = async (
-    q: string | undefined
-  ): Promise<CommentDBWithCreator[]> => {
-
+  // Método para encontrar comentários com uma pesquisa opcional
+  public findComments = async (q: string | undefined): Promise<CommentDBWithCreator[]> => {
     let commentsDB;
 
     if (q) {
@@ -82,13 +78,10 @@ export class CommentDatabase extends BaseDatabase {
     }
 
     return commentsDB
-
   }
 
-  public findCommentById = async (
-    id: string
-  ): Promise<CommentDBWithCreator> => {
-
+  // Método para encontrar um comentário por ID
+  public findCommentById = async (id: string): Promise<CommentDBWithCreator> => {
     const [result] = await BaseDatabase
       .connection(CommentDatabase.TABLE_COMMENTS)
       .select(
@@ -118,15 +111,12 @@ export class CommentDatabase extends BaseDatabase {
     return result as CommentDBWithCreator
   }
 
-  public findCommentCreatorById = async (
-    id: string
-  ): Promise<CommentDBWithCreator | undefined> => {
-
+  // Método para encontrar o criador de um comentário por ID
+  public findCommentCreatorById = async (id: string): Promise<CommentDBWithCreator | undefined> => {
     const [result] = await BaseDatabase
       .connection(CommentDatabase.TABLE_COMMENTS)
       .select(
-        `${CommentDatabase.TABLE_COMMENTS}..id as post_id`,
-        `${CommentDatabase.TABLE_COMMENTS}..creator_id`,
+        `${CommentDatabase.TABLE_COMMENTS}.creator_id`,
         `${UserDatabase.TABLE_USERS}.username as creator_username`,
         `${CommentDatabase.TABLE_COMMENTS}.content`
       )
@@ -145,31 +135,24 @@ export class CommentDatabase extends BaseDatabase {
     return result as CommentDBWithCreator | undefined
   }
 
- public updateCommentById = async (
-    id: string, TopicDB: CommentDB
-  ): Promise<void> => {
-
+  // Método para atualizar um comentário por ID
+  public updateCommentById = async (id: string, commentDB: CommentDB): Promise<void> => {
     await BaseDatabase
       .connection(CommentDatabase.TABLE_COMMENTS)
-      .update(TopicDB)
+      .update(commentDB)
       .where({ id: id })
   }
 
-  
-  public deleteCommentById = async (
-    idToDelete: string
-  ): Promise<void> => {
-
+  // Método para deletar um comentário por ID
+  public deleteCommentById = async (idToDelete: string): Promise<void> => {
     await BaseDatabase
       .connection(CommentDatabase.TABLE_COMMENTS)
       .delete()
       .where({ id: idToDelete })
   }
 
-  public likeOrDislikeComment = async (
-    id: string
-  ): Promise<CommentDB | undefined> => {
-
+  // Método para obter o status de like ou dislike de um comentário
+  public likeOrDislikeComment = async (id: string): Promise<CommentDB | undefined> => {
     const [result] = await BaseDatabase
       .connection(CommentDatabase.TABLE_COMMENTS)
       .select(
@@ -193,11 +176,8 @@ export class CommentDatabase extends BaseDatabase {
     return result as CommentDB | undefined
   }
 
-
-  public findLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<COMMENT_LIKE | undefined> => {
-
+  // Método para encontrar o status de like ou dislike de um usuário para um comentário
+  public findLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<COMMENT_LIKE | undefined> => {
     const [result]: Array<LikeOrDislikeDB | undefined> = await BaseDatabase
       .connection(CommentDatabase.TABLE_LIKES_DISLIKES)
       .select()
@@ -213,13 +193,10 @@ export class CommentDatabase extends BaseDatabase {
     } else {
       return COMMENT_LIKE.ALREADY_DISLIKED
     }
-
   }
 
-  public deleteLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<void> => {
-
+  // Método para excluir o status de like ou dislike de um usuário para um comentário
+  public deleteLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<void> => {
     await BaseDatabase
       .connection(CommentDatabase.TABLE_LIKES_DISLIKES)
       .delete()
@@ -229,10 +206,8 @@ export class CommentDatabase extends BaseDatabase {
       })
   }
 
-  public updateLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<void> => {
-
+  // Método para atualizar o status de like ou dislike de um usuário para um comentário
+  public updateLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<void> => {
     await BaseDatabase
       .connection(CommentDatabase.TABLE_LIKES_DISLIKES)
       .update(likeOrDislikeDB)
@@ -242,14 +217,10 @@ export class CommentDatabase extends BaseDatabase {
       })
   }
 
-  public insertLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<void> => {
-
+  // Método para inserir o status de like ou dislike de um usuário para um comentário
+  public insertLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<void> => {
     await BaseDatabase
       .connection(CommentDatabase.TABLE_LIKES_DISLIKES)
       .insert(likeOrDislikeDB)
   }
-}
-
-
+};

@@ -13,7 +13,6 @@ import { CreateCommentInputDTO, CreateCommentOutputDTO } from "../dtos/Comments/
 import { DeleteCommentInputDTO, DeleteCommentOutputDTO } from "../dtos/Comments/deleteComment.dto"
 import { LikeOrDislikeCommentInputDTO, LikeOrDislikeCommentOutputDTO } from "../dtos/Comments/likeOrDislike.dto"
 
-
 export class CommentBusiness {
 
   constructor(
@@ -23,55 +22,59 @@ export class CommentBusiness {
     private PostDatabase: PostDatabase
   ) { }
 
-
+  // Método para obter comentários
   public getComments = async (
     input: GetCommentsInputDTO
   ): Promise<GetCommentsOutputDTO> => {
-
     const { content, token } = input
     const payload = this.tokenManager.getPayload(token)
 
+    // Verifica se o token é inválido
     if (payload === null) {
       throw new UnauthorizedError("Token inválido")
     }
 
+    // Busca os comentários no banco de dados
     let CommentsDB = await this.CommentDatabase.findComments(content)
 
-    const Comments = CommentsDB
-      .map(CommentWithCreator => {
-        const comment = new Comment(
-          CommentWithCreator.id,
-          CommentWithCreator.post_id,
-          CommentWithCreator.content,
-          CommentWithCreator.likes,
-          CommentWithCreator.dislikes,
-          CommentWithCreator.created_at,
-          CommentWithCreator.updated_at,
-          CommentWithCreator.creator_id,
-          CommentWithCreator.creator_username
-        )
+    // Mapeia os comentários para o formato de saída
+    const Comments = CommentsDB.map(CommentWithCreator => {
+      const comment = new Comment(
+        CommentWithCreator.id,
+        CommentWithCreator.post_id,
+        CommentWithCreator.content,
+        CommentWithCreator.likes,
+        CommentWithCreator.dislikes,
+        CommentWithCreator.created_at,
+        CommentWithCreator.updated_at,
+        CommentWithCreator.creator_id,
+        CommentWithCreator.creator_username
+      )
 
-        return comment.toBusinessModel()
-      })
+      return comment.toBusinessModel()
+    })
 
     const output: GetCommentsOutputDTO = Comments
     return output
   }
 
+  // Método para criar um comentário
   public createComment = async (
     input: CreateCommentInputDTO
   ): Promise<CreateCommentOutputDTO> => {
-
     const { postId, content, token } = input
 
+    // Gera um ID para o comentário
     const id = this.idGenerator.generate()
     const payload = this.tokenManager.getPayload(token)
     const postDB = await this.PostDatabase.findPostById(postId)
 
+    // Verifica se o token é inválido
     if (payload === null) {
       throw new UnauthorizedError("Token inválido")
     }
 
+    // Cria um novo comentário
     const newComment = new Comment(
       id,
       postId,
@@ -84,6 +87,7 @@ export class CommentBusiness {
       payload.username
     )
 
+    // Atualiza o post com o novo comentário
     const post = new Post(
       postDB.id,
       postDB.content,
@@ -120,9 +124,12 @@ export class CommentBusiness {
       updated_at: post.getUpdatedAt(),
     }
 
+    // Insere o novo comentário no banco de dados
     await this.CommentDatabase.insertComment(newCommentDB)
+    // Atualiza o post no banco de dados
     await this.PostDatabase.updatePostById(postId, updatedPostDB)
 
+    // Formata o comentário de saída
     const output: CommentModel = {
       id: newComment.getId(),
       postId: newComment.getPostId(),
@@ -140,27 +147,30 @@ export class CommentBusiness {
     return output
   }
 
+  // Método para deletar um comentário
   public deleteComment = async (
     input: DeleteCommentInputDTO
   ): Promise<DeleteCommentOutputDTO> => {
-
     const { idToDelete, token } = input
 
+    // Busca o comentário a ser deletado no banco de dados
     const commentToDeleteDB = await this.CommentDatabase.findCommentById(idToDelete)
     const payload = this.tokenManager.getPayload(token)
 
+    // Verifica se o token é inválido
     if (payload === null) {
       throw new UnauthorizedError("Token inválido")
     }
 
     if (!idToDelete) {
-      throw new NotFoundError("Por favor, insira um id")
+      throw new NotFoundError("Por favor, insira um ID")
     }
 
     if (!commentToDeleteDB) {
       throw new NotFoundError("'ID' não encontrado")
     }
 
+    // Verifica se o usuário tem permissão para deletar o comentário
     if (payload.role === USER_ROLES.ADMIN) {
       await this.CommentDatabase.deleteCommentById(idToDelete)
     } else if (commentToDeleteDB.creator_id === payload.id) {
@@ -175,18 +185,20 @@ export class CommentBusiness {
     return output
   }
 
+  // Método para curtir ou descurtir um comentário
   public likeOrDislikeComment = async (
     input: LikeOrDislikeCommentInputDTO
   ): Promise<LikeOrDislikeCommentOutputDTO> => {
-
     const { id, like, token } = input
 
     const payload = this.tokenManager.getPayload(token)
 
+    // Verifica se o token é inválido
     if (payload === null) {
       throw new UnauthorizedError("Token inválido")
     }
 
+    // Busca o comentário no banco de dados
     const CommentDBwithCreator = await this.CommentDatabase.findCommentById(id)
 
     if (!CommentDBwithCreator) {
@@ -250,4 +262,4 @@ export class CommentBusiness {
 
     return output
   }
-}
+};

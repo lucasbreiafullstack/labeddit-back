@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs'
-import dotenv from 'dotenv'
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 
 dotenv.config()
 

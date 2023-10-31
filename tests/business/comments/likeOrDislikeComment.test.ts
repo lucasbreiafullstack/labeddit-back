@@ -6,9 +6,8 @@ import { TokenManagerMock } from "../../../tests/mocks/TokenManagerMock"
 import { CommentDatabaseMock } from "../../../tests/mocks/CommentDatabaseMock"
 import { LikeOrDislikeCommentSchema } from "../../../src/dtos/Comments/likeOrDislike.dto"
 
-
 describe("Testando likeOrDislikeComment", () => {
-  const comentBusiness = new CommentBusiness(
+  const commentBusiness = new CommentBusiness(
     new CommentDatabaseMock(),
     new IdGeneratorMock(),
     new TokenManagerMock(),
@@ -16,109 +15,125 @@ describe("Testando likeOrDislikeComment", () => {
   )
 
   test("deve fazer uma busca pelo array de comentários e dar um like no comentário", async () => {
+    // Prepara os dados de entrada para dar um like no comentário
     const input = LikeOrDislikeCommentSchema.parse({
       id: "comment01",
       like: true,
       token: "token-mock-astrodev"
     })
 
-    const output = await comentBusiness.likeOrDislikeComment(input)
+    // Chama o método para dar um like no comentário
+    const output = await commentBusiness.likeOrDislikeComment(input)
 
+    // Verifica se a contagem de likes e dislikes está correta após o like
     expect(output).toEqual({ "dislikes": 0, "likes": 1 })
   })
 
-
   test("deve fazer uma busca pelo array de comentários e dar um dislike no comentário", async () => {
+    // Prepara os dados de entrada para dar um dislike no comentário
     const input = LikeOrDislikeCommentSchema.parse({
       id: "comment01",
       like: false,
       token: "token-mock-astrodev"
     })
 
-    const output = await comentBusiness.likeOrDislikeComment(input)
+    // Chama o método para dar um dislike no comentário
+    const output = await commentBusiness.likeOrDislikeComment(input)
 
+    // Verifica se a contagem de likes e dislikes está correta após o dislike
     expect(output).toEqual({ "dislikes": 1, "likes": 0 })
   })
 
   test("deve disparar erro na ausência de commentId", async () => {
+    // Tenta dar like/dislike em um comentário sem especificar o "id"
     try {
-      const input = LikeOrDislikeCommentSchema.parse({
+      LikeOrDislikeCommentSchema.parse({
         id: "",
         like: true,
         token: "token-mock-astrodev"
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        expect("id: String must contain at least 1 character(s)")
+        // Verifica se a validação do schema gerou o erro esperado
+        expect(error.issues[0].message).toEqual("id: String must contain at least 1 character(s)")
       }
     }
   })
 
   test("deve disparar erro quando like não for boolean", async () => {
+    // Tenta dar like/dislike em um comentário com o campo "like" sendo uma string
     try {
-      const input = LikeOrDislikeCommentSchema.parse({
+      LikeOrDislikeCommentSchema.parse({
         id: "comment01",
         like: "true",
         token: "token-mock-astrodev"
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        expect("like: Expected boolean, received string")
+        // Verifica se a validação do schema gerou o erro esperado
+        expect(error.issues[0].message).toEqual("like: Expected boolean, received string")
       }
     }
   })
 
   test("deve disparar erro na ausência de token", async () => {
+    // Tenta dar like/dislike em um comentário sem especificar o "token"
     try {
-      const input = LikeOrDislikeCommentSchema.parse({
+      LikeOrDislikeCommentSchema.parse({
         id: "comment01",
         like: true,
         token: ""
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        expect("token: String must contain at least 1 character(s)")
+        // Verifica se a validação do schema gerou o erro esperado
+        expect(error.issues[0].message).toEqual("token: String must contain at least 1 character(s)")
       }
     }
   })
 
   test("deve disparar erro na ausência do input commentId", async () => {
+    // Tenta dar like/dislike em um comentário sem especificar o "id"
     try {
-      const input = LikeOrDislikeCommentSchema.parse({
+      LikeOrDislikeCommentSchema.parse({
         like: true,
         token: "token-mock-astrodev"
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        expect("id: Required")
+        // Verifica se a validação do schema gerou o erro esperado
+        expect(error.issues[0].message).toEqual("id: Required")
       }
     }
   })
 
   test("deve disparar erro na ausência do input like", async () => {
+    // Tenta dar like/dislike em um comentário sem especificar o "like"
     try {
-      const input = LikeOrDislikeCommentSchema.parse({
+      LikeOrDislikeCommentSchema.parse({
         id: "comment01",
         token: "token-mock-astrodev"
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        expect("like: Required")
+        // Verifica se a validação do schema gerou o erro esperado
+        expect(error.issues[0].message).toEqual("like: Required")
       }
     }
   })
 
   test("deve disparar erro na ausência do input token", async () => {
+    // Tenta dar like/dislike em um comentário sem especificar o "token"
     try {
-      const input = LikeOrDislikeCommentSchema.parse({
-        id:"comment01",
+      LikeOrDislikeCommentSchema.parse({
+        id: "comment01",
         like: true
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        expect("token: Required")
+        // Verifica se a validação do schema gerou o erro esperado
+        expect(error.issues[0].message).toEqual("token: Required")
       }
     }
   })
-
-})
+});
