@@ -1,11 +1,11 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { TokenPayload, USER_ROLES } from "../models/User";
+import { TokenPayload } from "../../src/models/User";
 
 
 dotenv.config();
 
-export class TokenManager {
+export class TokenManagerMock {
     public createToken = (payload:TokenPayload): string => {
         const token = jwt.sign(
             payload,

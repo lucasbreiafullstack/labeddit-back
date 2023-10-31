@@ -1,14 +1,24 @@
-import z from 'zod'
-import { UserModel } from '../../models/user/User'
+import { z } from "zod";
 
 export interface GetUsersInputDTO {
-    token: string,
-    q?: string
+    q?: string;
+    token: string;
 }
 
-export type GetUsersOutputDTO = UserModel[]
+export interface GetUsersOutputDTO {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: string;
+}
 
 export const GetUsersSchema = z.object({
-    token: z.string().min(5),
-    q: z.string().min(1).optional()
-}).transform(item => item as GetUsersInputDTO)
+    q: z.string({
+        invalid_type_error: '"q" must be a string.',
+    }).min(1, '"q" must have at least one character.').optional(),
+    token: z.string({
+        invalid_type_error: 'The "token" must be a string.',
+        required_error: 'Please provide a valid "token".',
+    }).min(1, 'Invalid token format.')
+}).transform(data => data as GetUsersInputDTO);
