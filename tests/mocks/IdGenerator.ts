@@ -1,7 +1,0 @@
-import { v4 } from 'uuid'
-
-export class IdGeneratorMock {
-    public generateId(): string {
-        return v4()
-    }
-}

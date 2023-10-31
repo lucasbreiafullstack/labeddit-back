@@ -1,129 +1,235 @@
-import { UserDatabase } from "../database/UserDatabase";
-import { GetUsersInputDTO, GetUsersOutputDTO } from "../dtos/user/getUsers.dto";
-import { LoginInputDTO, LoginOutputDTO } from "../dtos/user/login.dto";
-import { SignupInputDTO, SignupOutputDTO } from "../dtos/user/signup.dto";
-import { BadRequestError } from "../errors/BadRequestError";
-import { NotFoundError } from "../errors/NotFoundError";
-import { TokenPayload, USER_ROLES, User } from "../models/User";
-import { IdGenerator } from "../services/IdGenerator";
-import { HashManager } from "../services/hashManager";
-import { TokenManager } from "../services/tokenManager";
+import { UserDatabase } from "../database/UserDataBase"
+import { UserDB, User } from "../models/User"
+import { BadRequestError } from "../errors/BadRequestError"
+import { UnauthorizedError } from "../errors/UnauthorizedError"
+import { TokenManager } from "../services/TokenManager"
+import { IdGenerator } from "../services/idGenerator"
+import { HashManager } from "../services/HashManager"
+import { USER_ROLES } from "../models/User"
+import { LoginInputDTO, LoginOutputDTO } from "../dtos/Users/login.dto"
+import { SignupInputDTO, SignupOutputDTO } from "../dtos/Users/signup.dto"
+import { EditUserInputDTO, EditUsertOutputDTO } from "../dtos/Users/editUser.dto"
+import { GetUsersInputDTO, GetUsersOutputDTO } from "../dtos/Users/getUsers.dto"
+import { DeleteUserInputDTO, DeleteUserOutputDTO } from "../dtos/Users/deleteUser.dto"
 
+export class UserBusiness {
 
-export class UserBusiness{
-    constructor(
-        private userDatabase: UserDatabase,
-        private tokenManager: TokenManager,
-        private idGenerator: IdGenerator,
-        private hashManager: HashManager
-    ){};
+  constructor(
+    private userDatabase: UserDatabase,
+    private tokenManager: TokenManager,
+    private idGenerator: IdGenerator,
+    private hashManager: HashManager
+  ) { }
 
-    public getUsers = async (input: GetUsersInputDTO):Promise<GetUsersOutputDTO[]> => {
-        const { q, token } = input;
+  public signup = async (
+    input: SignupInputDTO
+  ): Promise<SignupOutputDTO> => {
+    const { username, email, password } = input
 
-        const payload = this.tokenManager.getPayload(token)
+    const id = this.idGenerator.generate()
+    const hashedPassword = await this.hashManager.hash(password)
+    const userDBExists = await this.userDatabase.findUserByEmail(email)
+    const users = await this.userDatabase.findUsers(undefined)
 
-        if(!payload){
-            throw new BadRequestError('token is required.')
-        };
-
-        if(payload.role !== USER_ROLES.ADMIN){
-            throw new BadRequestError('Only ADMIN users can access users information.')
-        };
-
-        const usersDB = await this.userDatabase.findUsers(q);
-
-        const users: GetUsersOutputDTO[] = usersDB.map((userDB) => {
-            return{
-                id: userDB.id,
-                name: userDB.name,
-                email: userDB.email,
-                role: userDB.user_role,
-                createdAt: userDB.created_at
-            }
-        });
-
-        return users
-    }; 
-
-    public signup = async (input:SignupInputDTO):Promise<SignupOutputDTO> => {
-        const { name, email, password } = input;
-
-        const checkEmail = await this.userDatabase.findEmail(email);
-
-        if(checkEmail){
-            throw new BadRequestError('email is already being used.')
-        };
-
-        const hashedPassword = await this.hashManager.hash(password);
-
-        const newUser = new User(
-            this.idGenerator.generateId(),
-            name,
-            email,
-            hashedPassword,
-            USER_ROLES.NORMAL,
-            new Date().toISOString()
-        );
-
-        await this.userDatabase.createUser(newUser.userToDBModel());
-
-        const token = this.tokenManager.createToken(
-            {
-                id: newUser.getId(),
-                role: newUser.getRole(),
-                name: newUser.getName()
-            }
-        );
-
-        const output: SignupOutputDTO = {
-            token: token
-        };
-
-        return output
+    if (userDBExists) {
+      throw new Error("Email já cadastrado")
     }
 
-    public login = async (input:LoginInputDTO):Promise<LoginOutputDTO> => {
-        const { email, password } = input;
+    const role = users.length === 0 ? USER_ROLES.ADMIN : USER_ROLES.NORMAL
 
-        const checkUserDB = await this.userDatabase.findEmail(email);
+    const newUser = new User(
+      id,
+      username,
+      email,
+      hashedPassword,
+      role,
+      new Date().toISOString()
+    )
 
-        console.log("checkuser", email, checkUserDB.email)
+    const newUserDB: UserDB = {
+      id: newUser.getId(),
+      username: newUser.getUsername(),
+      email: newUser.getEmail(),
+      password: newUser.getPassword(),
+      role: newUser.getRole(),
+      created_at: newUser.getCreatedAt()
+    }
 
-        if(!checkUserDB){
-            throw new NotFoundError('user not found')
-        };
+    await this.userDatabase.insertUser(newUserDB)
 
-        console.log("password", password, checkUserDB.password)
-        const isPasswordValid = await this.hashManager.compare(password, checkUserDB.password);
+    const token = this.tokenManager.createToken({
+      id: newUser.getId(),
+      role: newUser.getRole(),
+      username: newUser.getUsername()
+    })
 
-        console.log("password", password, checkUserDB.password)
+    const output = {
+      id: newUser.getId(),
+      username: newUser.getUsername(),
+      email: newUser.getEmail(),
+      role: newUser.getRole(),
+      token: token
+    }
 
-        if(!isPasswordValid){
-            throw new BadRequestError('password is invalid')
-        };
+    return output
+  }
 
+
+  public login = async (
+    input: LoginInputDTO
+  ): Promise<LoginOutputDTO> => {
+
+    const { email, password } = input
+
+    const userDB = await this.userDatabase.findUserByEmail(email)
+
+    const hashedPassword = userDB.password
+    const isPasswordCorrect = await this.hashManager.compare(password, hashedPassword)
+
+    if (!isPasswordCorrect) {
+      throw new BadRequestError("'Email' ou 'password' não conferem, tente novamente")
+    }
+
+    const token = this.tokenManager.createToken({
+      id: userDB.id,
+      role: userDB.role,
+      username: userDB.username
+    })
+
+    const output: LoginOutputDTO = {
+      id: userDB.id,
+      username: userDB.username,
+      email: userDB.email,
+      role: userDB.role,
+      token: token
+    }
+
+    return output
+  }
+
+  public getUsers = async (
+    input: GetUsersInputDTO
+  ): Promise<GetUsersOutputDTO> => {
+
+    const { username, token } = input
+    const payload = this.tokenManager.getPayload(token)
+
+    if (payload === null) {
+      throw new UnauthorizedError("Token inválido")
+    }
+
+    let userFoundDB = await this.userDatabase.findUsers(username)
+
+    const users = userFoundDB
+      .map((userDB) => {
         const user = new User(
-            checkUserDB.id,
-            checkUserDB.name,
-            checkUserDB.email,
-            checkUserDB.password,
-            checkUserDB.user_role,
-            checkUserDB.created_at,
-        );
+          userDB.id,
+          userDB.username,
+          userDB.email,
+          userDB.password,
+          userDB.role,
+          userDB.created_at
+        )
+        return user.toBusinessModel()
+      })
 
-        const payload:TokenPayload = {
-            id: user.getId(),
-            role: user.getRole(),
-            name: user.getName()
-        };
+    const output: GetUsersOutputDTO = users
+    return output
+  }
 
-        const token = this.tokenManager.createToken(payload);
+  public editUserById = async (
+    input: EditUserInputDTO
+  ): Promise<EditUsertOutputDTO> => {
 
-        const output:LoginOutputDTO = {
-            token: token
-        };
+    const {
+      idToEdit,
+      username,
+      email,
+      password,
+      token
+    } = input
 
-        return output
+    const userToEditDB = await this.userDatabase.findUserById(idToEdit)
+
+    const payload = this.tokenManager.getPayload(token)
+
+    if (payload === null) {
+      throw new UnauthorizedError("Token inválido")
     }
+
+    const user = new User(
+      userToEditDB.id,
+      userToEditDB.username,
+      userToEditDB.email,
+      userToEditDB.password,
+      userToEditDB.role,
+      userToEditDB.created_at
+    )
+
+    if (userToEditDB.id !== idToEdit) {
+      throw new UnauthorizedError("Somente o dono desta conta pode editar os dados da mesma.")
+    }
+
+    if(email !== undefined && email.length > 11) {
+      email && user.setEmail(email)
+    }
+    if(username !== undefined && username.length > 2) {
+      username && user.setUsername(username) 
+    }
+    if(password !== undefined && password.length > 6) {
+      password && user.setPassword(password)
+    }
+
+    const updatedUserDB: UserDB = {
+      id: user.getId(),
+      username: user.getUsername(),
+      email: user.getEmail(),
+      password: user.getPassword(),
+      role: user.getRole(),
+      created_at: user.getCreatedAt()
+    }
+
+    const newUser = new User(
+      updatedUserDB.id,
+      updatedUserDB.username,
+      updatedUserDB.email,
+      updatedUserDB.password,
+      updatedUserDB.role,
+      updatedUserDB.created_at
+    )
+
+    await this.userDatabase.updateUserById(idToEdit, updatedUserDB)
+
+    return newUser.toBusinessModel()
+
+  }
+
+  public deleteUserById = async (
+    input: DeleteUserInputDTO
+  ): Promise<DeleteUserOutputDTO> => {
+
+    const { idToDelete, token } = input
+
+    const userToDeleteDB = await this.userDatabase.findUserById(idToDelete)
+
+    const payload = this.tokenManager.getPayload(token)
+
+    if (payload === null) {
+      throw new UnauthorizedError("Token inválido")
+    }
+
+    if (payload.role === USER_ROLES.ADMIN) {
+      await this.userDatabase.deleteUserById(userToDeleteDB.id)
+    } else if (userToDeleteDB.id === payload.id) {
+      await this.userDatabase.deleteUserById(userToDeleteDB.id)
+    } else {
+      throw new UnauthorizedError("Somente admins ou o dono dessa conta podem acessar esse recurso")
+    }
+
+    const output = {
+      message: "Usuário deletado com sucesso",
+    }
+    return output
+  }
+
 }

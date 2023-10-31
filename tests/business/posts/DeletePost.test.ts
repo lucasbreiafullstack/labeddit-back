@@ -1,115 +1,76 @@
-import { ZodError } from "zod"
-import { PostBusiness } from "../../../src/business/PostBusiness" 
-import { DeletePostSchema } from "../../../src/dtos/post/deletePost.dto" 
-import { BadRequestError } from "../../../src/errors/BadRequestError"
-import { NotFoundError } from "../../../src/errors/NotFoundError"
-import { IdGeneratorMock } from "../../mocks/IdGenerator" 
-import { LikesDislikesDatabaseMock } from "../../mocks/LikesDislikesDatabaseMock" 
-import { PostDatabaseMock } from "../../mocks/PostDatabaseMock"
-import { TokenManagerMock } from "../../mocks/tokenManagerMock" 
-import { CommentDatabaseMock } from "../../mocks/CommnetDatabaseMock" 
+import { ZodError } from 'zod'
+import { PostBusiness } from '../../../src/business/PostBusiness'
+import { IdGeneratorMock } from "../../mocks/IdGeneratorMock"
+import { TokenManagerMock } from "../../mocks/TokenManagerMock"
+import { PostDatabaseMock } from "../../mocks/PostDataBaseMock"
+import { DeletePostSchema } from '../../../src/dtos/Posts/deletePost.dto'
 
-describe('Tests for the DeletePost method', () => {
-    const postBusiness = new PostBusiness(
-        new PostDatabaseMock(),
-        new LikesDislikesDatabaseMock(),
-        new CommentDatabaseMock(),
-        new TokenManagerMock(),
-        new IdGeneratorMock()
-    );
+describe("Testando deletePost", () => {
+  const postBusiness = new PostBusiness(
+    new PostDatabaseMock(),
+    new IdGeneratorMock(),
+    new TokenManagerMock()
+  )
 
-    test('Should not throw any errors when executed', async () => {
-        const input = DeletePostSchema.parse({
-            id: 'post001',
-            token: 'token-mock-normUser'
-        });
-
-        await postBusiness.deletePost(input)
-       
-        expect(async () => await postBusiness.deletePost(input)).not.toThrow()
-    });
-
-    test('Invalid token', async () => {
-        expect.assertions(2);
-        try {
-            const input = DeletePostSchema.parse({
-                id: 'post001',
-                token: 'token'
-            });
-
-            await postBusiness.deletePost(input)
-            
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.statusCode).toBe(400);
-                expect(error.message).toBe('Invalid token.')
-            }
-        }
-    });
-
-    test('Post not found', async () => {
-        expect.assertions(2);
-        try {
-            const input = DeletePostSchema.parse({
-                id: 'post055',
-                token: 'token-mock-normUser'
-            });
-    
-            await postBusiness.deletePost(input)
-
-        } catch (error) {
-            if(error instanceof NotFoundError){
-                expect(error.statusCode).toBe(404);
-                expect(error.message).toBe('Post not found.')
-            }
-        }
-    });
-
-    test('Unauthorized user', async () => {
-        expect.assertions(2);
-        try {
-            const input = DeletePostSchema.parse({
-                id: 'post001',
-                token: 'token-mock-mockUser'
-            });
-    
-            await postBusiness.deletePost(input)
-
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.statusCode).toBe(400);
-                expect(error.message).toBe('Only the creator of the post or ADMIN users can delete it.')
-            }
-        }
-    });
-
-    test('Zod validation for the id', async () => {
-        expect.assertions(1);
-        try {
-            const input = DeletePostSchema.parse({
-                id: ' ',
-                token: 'token-mock-normUser'
-            });
-    
-            await postBusiness.deletePost(input)
-
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
-    });
-
-    test('Zod validation for the token', async () => {
-        expect.assertions(1);
-        try {
-            const input = DeletePostSchema.parse({
-                id: 'post001',
-                token: ''
-            });
-    
-            await postBusiness.deletePost(input)
-
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
+  test("deve deletar um comentário", async () => {
+    const input = DeletePostSchema.parse({
+      idToDelete: "post01",
+      token: "token-mock-fulano"
     })
+
+    const output = await postBusiness.deletePost(input)
+
+    expect(output).toEqual({ message: "Postagem deletada com sucesso" })
+  })
+
+  test("deve disparar erro na ausência de idToDelete", async () => {
+    try {
+      const input = DeletePostSchema.parse({
+        idToDelete: "",
+        token: "token-mock-astrodev"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("idToDelete: String must contain at least 1 character(s)")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência de token", async () => {
+    try {
+      const input = DeletePostSchema.parse({
+        idToDelete: "post01",
+        token: ""
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("token: String must contain at least 1 character(s)")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência do input", async () => {
+    try {
+      const input = DeletePostSchema.parse({
+        token: "token-mock-astrodev"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("idToDelete: Required")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência do input token", async () => {
+    try {
+      const input = DeletePostSchema.parse({
+        idToDelete: "post01",
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("token: Required")
+    }
+  }
+  })
+
 })

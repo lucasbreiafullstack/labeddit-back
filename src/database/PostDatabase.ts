@@ -1,59 +1,230 @@
-import { LikesDislikesCountDB } from "../models/LikesDislikes";
-import { GetPostDB, PostDB } from "../models/Post";
+import { LikeOrDislikeDB, POST_LIKE } from "../models/LikePost";
+import { PostDB, PostDBWithCreator, PostModel } from "../models/Post";
 import { BaseDatabase } from "./BaseDatabase";
+import { UserDatabase } from "./UserDataBase";
 
 export class PostDatabase extends BaseDatabase {
-    TABLE_NAME = 'posts'
 
-    public async createPost(newPost:PostDB):Promise<void>{
-        await BaseDatabase.connection(this.TABLE_NAME)
-            .insert(newPost)
-    };
+  public static TABLE_POSTS = "posts";
+  public static TABLE_LIKES_DISLIKES = "likes_dislikes_posts";
 
-    public async getPosts():Promise<GetPostDB[]>{
-        const result:GetPostDB[] = await BaseDatabase.connection(this.TABLE_NAME)
-            .select(
-                'posts.id',
-                'posts.content',
-                'posts.likes',
-                'posts.dislikes',
-                'posts.comments',
-                'posts.created_at as createdAt',
-                'posts.updated_at as updatedAt',
-                'posts.creator_id as creatorId',
-                'users.name as creatorName'
-            )
-            .innerJoin('users', 'users.id', '=', 'posts.creator_id');
-        
-        return result
-    };
+  public insertPost = async (
+    newPostDB: PostDB
+  ): Promise<void> => {
 
-    public async getPostById(id:string):Promise<PostDB>{
-        const [postDB]:PostDB[] = await super.findById(id);
-        
-        return postDB
-    };
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .insert(newPostDB)
+  }
 
-    public async updatePost(editedPost:PostDB):Promise<void>{
-        await BaseDatabase.connection(this.TABLE_NAME)
-            .update(editedPost)
-            .where({id: editedPost.id})
-            .andWhere({creator_id: editedPost.creator_id});
-    };
+  public findPosts = async (q: string | undefined): Promise<PostDBWithCreator[]> => {
 
-    public async deletePost(id:string):Promise<void>{
-        await BaseDatabase.connection(this.TABLE_NAME)
-            .del()
-            .where({id})
-    };
+    let PostsDB;
 
-    public async editPostLikes(postId:string, newLikeDislikeCount:LikesDislikesCountDB):Promise<void>{
-        await BaseDatabase.connection(this.TABLE_NAME)
-            .update(
-                {
-                    likes: newLikeDislikeCount.newLikeCount,
-                    dislikes: newLikeDislikeCount.newDislikeCount
-                }
-            ).where({id: postId})
+    if (q) {
+      const result: Array<PostDBWithCreator> = await BaseDatabase
+        .connection(PostDatabase.TABLE_POSTS)
+        .select(
+          `${PostDatabase.TABLE_POSTS}.id`,
+          `${PostDatabase.TABLE_POSTS}.creator_id`,
+          `${PostDatabase.TABLE_POSTS}.content`,
+          `${PostDatabase.TABLE_POSTS}.likes`,
+          `${PostDatabase.TABLE_POSTS}.dislikes`,
+          `${PostDatabase.TABLE_POSTS}.comments`,
+          `${PostDatabase.TABLE_POSTS}.created_at`,
+          `${PostDatabase.TABLE_POSTS}.updated_at`,
+          `${UserDatabase.TABLE_USERS}.username as creator_username`
+        )
+        .join(
+          `${UserDatabase.TABLE_USERS}`,
+          `${PostDatabase.TABLE_POSTS}.creator_id`,
+          "=",
+          `${UserDatabase.TABLE_USERS}.id`
+        ).where(`${PostDatabase.TABLE_POSTS}.content`, "LIKE", `%${q}%`)
+
+      PostsDB = result
+
+    } else {
+      const result: Array<PostDBWithCreator> = await BaseDatabase
+        .connection(PostDatabase.TABLE_POSTS)
+        .select(
+          `${PostDatabase.TABLE_POSTS}.id`,
+          `${PostDatabase.TABLE_POSTS}.creator_id`,
+          `${PostDatabase.TABLE_POSTS}.content`,
+          `${PostDatabase.TABLE_POSTS}.likes`,
+          `${PostDatabase.TABLE_POSTS}.dislikes`,
+          `${PostDatabase.TABLE_POSTS}.comments`,
+          `${PostDatabase.TABLE_POSTS}.created_at`,
+          `${PostDatabase.TABLE_POSTS}.updated_at`,
+          `${UserDatabase.TABLE_USERS}.username as creator_username`
+        )
+        .join(
+          `${UserDatabase.TABLE_USERS}`,
+          `${PostDatabase.TABLE_POSTS}.creator_id`,
+          "=",
+          `${UserDatabase.TABLE_USERS}.id`
+        )
+
+      PostsDB = result
     }
+
+    return PostsDB
+  }
+
+  public findPostById = async (
+    id: string
+  ): Promise<PostDBWithCreator> => {
+
+    const [result] = await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .select(
+        `${PostDatabase.TABLE_POSTS}.id`,
+        `${PostDatabase.TABLE_POSTS}.creator_id`,
+        `${PostDatabase.TABLE_POSTS}.content`,
+        `${PostDatabase.TABLE_POSTS}.likes`,
+        `${PostDatabase.TABLE_POSTS}.dislikes`,
+        `${PostDatabase.TABLE_POSTS}.comments`,
+        `${PostDatabase.TABLE_POSTS}.created_at`,
+        `${PostDatabase.TABLE_POSTS}.updated_at`,
+        `${UserDatabase.TABLE_USERS}.username as creator_username`
+      )
+      .join(
+        `${UserDatabase.TABLE_USERS}`,
+        `${PostDatabase.TABLE_POSTS}.creator_id`,
+        "=",
+        `${UserDatabase.TABLE_USERS}.id`
+      )
+      .where({ [`${PostDatabase.TABLE_POSTS}.id`]: id })
+
+    return result as PostDBWithCreator
+  }
+
+  public findPostCreatorById = async (
+    id: string
+  ): Promise<PostDBWithCreator | undefined> => {
+
+    const [result] = await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .select(
+        `${PostDatabase.TABLE_POSTS}.id as post_id`,
+        `${PostDatabase.TABLE_POSTS}.creator_id`,
+        `${UserDatabase.TABLE_USERS}.username as creator_username`,
+        `${PostDatabase.TABLE_POSTS}.content`
+      )
+      .join(
+        `${UserDatabase.TABLE_USERS}`,
+        `${PostDatabase.TABLE_POSTS}.creator_id`,
+        "=",
+        `${UserDatabase.TABLE_USERS}.id`
+      ).where({ creator_id: id })
+
+    return result as PostDBWithCreator | undefined
+  }
+
+  public updatePostById = async (
+    idToEdit: string, postDB: PostDB
+  ): Promise<void> => {
+
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .update(postDB)
+      .where({ id: idToEdit })
+  }
+
+  public deletePostById = async (
+    idToDelete: string
+  ): Promise<void> => {
+
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .delete()
+      .where({ id: idToDelete })
+  }
+
+
+  public likeOrDislikePost = async (
+    id: string
+  ): Promise<PostDB | undefined> => {
+
+    const [result] = await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .select(
+        `${PostDatabase.TABLE_POSTS}.id`,
+        `${PostDatabase.TABLE_POSTS}.creator_id`,
+        `${PostDatabase.TABLE_POSTS}.content`,
+        `${PostDatabase.TABLE_POSTS}.likes`,
+        `${PostDatabase.TABLE_POSTS}.dislikes`,
+        `${PostDatabase.TABLE_POSTS}.comments`,
+        `${PostDatabase.TABLE_POSTS}.created_at`,
+        `${PostDatabase.TABLE_POSTS}.updated_at`,
+        `${UserDatabase.TABLE_USERS}.username as creator_username`
+      )
+      .join(
+        `${UserDatabase.TABLE_USERS}`,
+        `${PostDatabase.TABLE_POSTS}.creator_id`,
+        "=",
+        `${UserDatabase.TABLE_USERS}.id`
+      ).where({ [`${PostDatabase.TABLE_POSTS}.id`]: id })
+
+    return result as PostDB | undefined
+  }
+
+
+  public findLikeOrDislike = async (
+    likeOrDislikeDB: LikeOrDislikeDB
+  ): Promise<POST_LIKE | undefined> => {
+
+    const [result]: Array<LikeOrDislikeDB | undefined> = await BaseDatabase
+      .connection(PostDatabase.TABLE_LIKES_DISLIKES)
+      .select()
+      .where({
+        user_id: likeOrDislikeDB.user_id,
+        post_id: likeOrDislikeDB.post_id
+      })
+
+    if (result === undefined) {
+      return undefined
+    } else if (result.like === 1) {
+      return POST_LIKE.ALREADY_LIKED
+    } else {
+      return POST_LIKE.ALREADY_DISLIKED
+    }
+
+  }
+
+  public deleteLikeOrDislike = async (
+    likeOrDislikeDB: LikeOrDislikeDB
+  ): Promise<void> => {
+
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_LIKES_DISLIKES)
+      .delete()
+      .where({
+        user_id: likeOrDislikeDB.user_id,
+        post_id: likeOrDislikeDB.post_id
+      })
+  }
+
+  public updateLikeOrDislike = async (
+    likeOrDislikeDB: LikeOrDislikeDB
+  ): Promise<void> => {
+
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_LIKES_DISLIKES)
+      .update(likeOrDislikeDB)
+      .where({
+        user_id: likeOrDislikeDB.user_id,
+        post_id: likeOrDislikeDB.post_id
+      })
+  }
+
+  public insertLikeOrDislike = async (
+    likeOrDislikeDB: LikeOrDislikeDB
+  ): Promise<void> => {
+
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_LIKES_DISLIKES)
+      .insert(likeOrDislikeDB)
+  }
+
 }

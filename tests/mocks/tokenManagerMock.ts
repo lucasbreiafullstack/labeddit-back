@@ -1,30 +1,38 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import { TokenPayload } from "../../src/models/User";
-
-
-dotenv.config();
+import { TokenPayload, USER_ROLES } from '../../src/models/User'
 
 export class TokenManagerMock {
-    public createToken = (payload:TokenPayload): string => {
-        const token = jwt.sign(
-            payload,
-            process.env.JWT_KEY as string,
-            {
-                expiresIn: process.env.JWT_EXPIRES_IN
-            }
-        )
+  public createToken = (payload: TokenPayload): string => {
+    if (payload.id === "id-mock") {
+      // signup de nova conta
+      return "token-mock"
 
-        return token
-    };
+    } else if (payload.id === "id-mock-fulano") {
+      // login de fulano (conta normal)
+      return "token-mock-fulano"
 
-    public getPayload = (token:string): TokenPayload | null => {
-        try {
-            const payload = jwt.verify(token, process.env.JWT_KEY as string);
-            return payload as TokenPayload
-
-        } catch (error) {
-            return null
-        }
+    } else {
+      // login de astrodev (conta admin)
+      return "token-mock-astrodev"
     }
+  }
+
+  public getPayload = (token: string): TokenPayload | null => {
+    if (token === "token-mock-fulano") {
+      return {
+        id: "id-mock-fulano",
+        username: "Fulano",
+        role: USER_ROLES.NORMAL
+      }
+
+    } else if (token === "token-mock-astrodev") {
+      return {
+        id: "id-mock-astrodev",
+        username: "Astrodev",
+        role: USER_ROLES.ADMIN
+      }
+
+    } else {
+      return null
+    }
+  }
 }
