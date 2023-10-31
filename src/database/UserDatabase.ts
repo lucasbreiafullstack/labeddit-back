@@ -5,20 +5,16 @@ export class UserDatabase extends BaseDatabase {
 
   public static TABLE_USERS = "users"
 
-  public insertUser = async (
-    input: UserDB
-  ): Promise<void> => {
+  // Método para inserir um novo usuário
+  public insertUser = async (input: UserDB): Promise<void> => {
     await BaseDatabase
       .connection(UserDatabase.TABLE_USERS)
       .insert(input)
   }
 
-
-  public findUsers = async (
-    q: string | undefined
-  ): Promise<UserDB[]> => {
-
-    let usersDB
+  // Método para encontrar usuários com uma pesquisa opcional
+  public findUsers = async (q: string | undefined): Promise<UserDB[]> => {
+    let usersDB;
 
     if (q) {
       const result: UserDB[] = await BaseDatabase
@@ -26,7 +22,7 @@ export class UserDatabase extends BaseDatabase {
         .select()
         .where("username", "LIKE", `%${q}%`)
       
-        usersDB = result
+      usersDB = result
 
     } else {
       const result: UserDB[] = await BaseDatabase
@@ -39,9 +35,8 @@ export class UserDatabase extends BaseDatabase {
     return usersDB
   }
 
-  public findUserById = async (
-    id: string
-  ): Promise<UserDB> => {
+  // Método para encontrar um usuário por ID
+  public findUserById = async (id: string): Promise<UserDB> => {
     const [userDB]: UserDB[] = await BaseDatabase
       .connection(UserDatabase.TABLE_USERS)
       .select()
@@ -50,9 +45,8 @@ export class UserDatabase extends BaseDatabase {
     return userDB
   }
 
-  public findUserByEmail = async (
-    email: string
-  ): Promise<UserDB> => {
+  // Método para encontrar um usuário por e-mail
+  public findUserByEmail = async (email: string): Promise<UserDB> => {
     const [userDB]: UserDB[] = await BaseDatabase
       .connection(UserDatabase.TABLE_USERS)
       .select()
@@ -61,23 +55,19 @@ export class UserDatabase extends BaseDatabase {
     return userDB
   }
 
-  public updateUserById = async (
-    id: string, userDB: UserDB
-  ): Promise<void> => {
+  // Método para atualizar um usuário por ID
+  public updateUserById = async (id: string, userDB: UserDB): Promise<void> => {
     await BaseDatabase
       .connection(UserDatabase.TABLE_USERS)
       .update(userDB)
       .where({ id })
   }
 
-  public deleteUserById = async (
-    id: string
-  ): Promise<void> => {
+  // Método para deletar um usuário por ID
+  public deleteUserById = async (id: string): Promise<void> => {
     await BaseDatabase
       .connection(UserDatabase.TABLE_USERS)
       .delete()
       .where({ id })
   }
-
-
-}
+};

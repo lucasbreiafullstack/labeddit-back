@@ -8,18 +8,16 @@ export class PostDatabase extends BaseDatabase {
   public static TABLE_POSTS = "posts";
   public static TABLE_LIKES_DISLIKES = "likes_dislikes_posts";
 
-  public insertPost = async (
-    newPostDB: PostDB
-  ): Promise<void> => {
-
+  // Método para inserir um novo post
+  public insertPost = async (newPostDB: PostDB): Promise<void> => {
     await BaseDatabase
       .connection(PostDatabase.TABLE_POSTS)
       .insert(newPostDB)
   }
 
+  // Método para encontrar posts com uma pesquisa opcional
   public findPosts = async (q: string | undefined): Promise<PostDBWithCreator[]> => {
-
-    let PostsDB;
+    let postsDB;
 
     if (q) {
       const result: Array<PostDBWithCreator> = await BaseDatabase
@@ -42,7 +40,7 @@ export class PostDatabase extends BaseDatabase {
           `${UserDatabase.TABLE_USERS}.id`
         ).where(`${PostDatabase.TABLE_POSTS}.content`, "LIKE", `%${q}%`)
 
-      PostsDB = result
+      postsDB = result
 
     } else {
       const result: Array<PostDBWithCreator> = await BaseDatabase
@@ -65,16 +63,14 @@ export class PostDatabase extends BaseDatabase {
           `${UserDatabase.TABLE_USERS}.id`
         )
 
-      PostsDB = result
+      postsDB = result
     }
 
-    return PostsDB
+    return postsDB
   }
 
-  public findPostById = async (
-    id: string
-  ): Promise<PostDBWithCreator> => {
-
+  // Método para encontrar um post por ID
+  public findPostById = async (id: string): Promise<PostDBWithCreator> => {
     const [result] = await BaseDatabase
       .connection(PostDatabase.TABLE_POSTS)
       .select(
@@ -99,14 +95,11 @@ export class PostDatabase extends BaseDatabase {
     return result as PostDBWithCreator
   }
 
-  public findPostCreatorById = async (
-    id: string
-  ): Promise<PostDBWithCreator | undefined> => {
-
+  // Método para encontrar o criador de um post por ID
+  public findPostCreatorById = async (id: string): Promise<PostDBWithCreator | undefined> => {
     const [result] = await BaseDatabase
       .connection(PostDatabase.TABLE_POSTS)
       .select(
-        `${PostDatabase.TABLE_POSTS}.id as post_id`,
         `${PostDatabase.TABLE_POSTS}.creator_id`,
         `${UserDatabase.TABLE_USERS}.username as creator_username`,
         `${PostDatabase.TABLE_POSTS}.content`
@@ -121,31 +114,24 @@ export class PostDatabase extends BaseDatabase {
     return result as PostDBWithCreator | undefined
   }
 
-  public updatePostById = async (
-    idToEdit: string, postDB: PostDB
-  ): Promise<void> => {
-
+  // Método para atualizar um post por ID
+  public updatePostById = async (idToEdit: string, postDB: PostDB): Promise<void> => {
     await BaseDatabase
       .connection(PostDatabase.TABLE_POSTS)
       .update(postDB)
       .where({ id: idToEdit })
   }
 
-  public deletePostById = async (
-    idToDelete: string
-  ): Promise<void> => {
-
+  // Método para deletar um post por ID
+  public deletePostById = async (idToDelete: string): Promise<void> => {
     await BaseDatabase
       .connection(PostDatabase.TABLE_POSTS)
       .delete()
       .where({ id: idToDelete })
   }
 
-
-  public likeOrDislikePost = async (
-    id: string
-  ): Promise<PostDB | undefined> => {
-
+  // Método para obter o status de like ou dislike de um post
+  public likeOrDislikePost = async (id: string): Promise<PostDB | undefined> => {
     const [result] = await BaseDatabase
       .connection(PostDatabase.TABLE_POSTS)
       .select(
@@ -169,11 +155,8 @@ export class PostDatabase extends BaseDatabase {
     return result as PostDB | undefined
   }
 
-
-  public findLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<POST_LIKE | undefined> => {
-
+  // Método para encontrar o status de like ou dislike de um usuário para um post
+  public findLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<POST_LIKE | undefined> => {
     const [result]: Array<LikeOrDislikeDB | undefined> = await BaseDatabase
       .connection(PostDatabase.TABLE_LIKES_DISLIKES)
       .select()
@@ -189,13 +172,10 @@ export class PostDatabase extends BaseDatabase {
     } else {
       return POST_LIKE.ALREADY_DISLIKED
     }
-
   }
 
-  public deleteLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<void> => {
-
+  // Método para excluir o status de like ou dislike de um usuário para um post
+  public deleteLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<void> => {
     await BaseDatabase
       .connection(PostDatabase.TABLE_LIKES_DISLIKES)
       .delete()
@@ -205,10 +185,8 @@ export class PostDatabase extends BaseDatabase {
       })
   }
 
-  public updateLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<void> => {
-
+  // Método para atualizar o status de like ou dislike de um usuário para um post
+  public updateLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<void> => {
     await BaseDatabase
       .connection(PostDatabase.TABLE_LIKES_DISLIKES)
       .update(likeOrDislikeDB)
@@ -218,13 +196,10 @@ export class PostDatabase extends BaseDatabase {
       })
   }
 
-  public insertLikeOrDislike = async (
-    likeOrDislikeDB: LikeOrDislikeDB
-  ): Promise<void> => {
-
+  // Método para inserir o status de like ou dislike de um usuário para um post
+  public insertLikeOrDislike = async (likeOrDislikeDB: LikeOrDislikeDB): Promise<void> => {
     await BaseDatabase
       .connection(PostDatabase.TABLE_LIKES_DISLIKES)
       .insert(likeOrDislikeDB)
   }
-
-}
+};

@@ -1,141 +1,73 @@
 export interface CommentDB {
-    id: string,
-    post_id: string,
-    creator_id: string,
-    content: string,
-    likes: number,
-    dislikes: number,
-    created_at: string,
-    updated_at: string
+    id: string; // Identificador único do comentário
+    post_id: string; // Identificador do post ao qual o comentário está associado
+    creator_id: string; // Identificador do usuário que criou o comentário
+    content: string; // Conteúdo do comentário
+    likes: number; // Número de curtidas do comentário
+    dislikes: number; // Número de descurtidas do comentário
+    created_at: string; // Data de criação do comentário
+    updated_at: string; // Data de atualização do comentário
 }
 
-export interface CommentDBWithCreator extends CommentDB{
-    creator_username: string
+export interface CommentDBWithCreator extends CommentDB {
+    creator_username: string; // Nome de usuário do criador do comentário
 }
 
 export interface CommentModel {
-    id: string,
-    postId: string,
-    content: string,
-    likes: number,
-    dislikes: number,
-    createdAt: string,
-    updatedAt: string,
+    id: string; // Identificador único do comentário
+    postId: string; // Identificador do post ao qual o comentário está associado
+    content: string; // Conteúdo do comentário
+    likes: number; // Número de curtidas do comentário
+    dislikes: number; // Número de descurtidas do comentário
+    createdAt: string; // Data de criação do comentário
+    updatedAt: string; // Data de atualização do comentário
     creator: {
-        id: string,
-        username: string
-    }
+        id: string; // Identificador único do criador do comentário
+        username: string; // Nome de usuário do criador do comentário
+    };
 }
 
 export class Comment {
     constructor(
-        private id: string,
-        private post_id: string,
-        private content: string,
-        private likes: number,
-        private dislikes: number,
-        private createdAt: string,
-        private updatedAt: string,
-        private creatorId: string,
-        private creatorUsername: string
-    ) { }
+        private id: string, // Identificador único do comentário
+        private post_id: string, // Identificador do post ao qual o comentário está associado
+        private content: string, // Conteúdo do comentário
+        private likes: number, // Número de curtidas do comentário
+        private dislikes: number, // Número de descurtidas do comentário
+        private createdAt: string, // Data de criação do comentário
+        private updatedAt: string, // Data de atualização do comentário
+        private creatorId: string, // Identificador do usuário que criou o comentário
+        private creatorUsername: string // Nome de usuário do criador do comentário
+    ) {}
 
-    public getId(): string {
-        return this.id
+    // Métodos getters e setters
+
+    public addLike(): void {
+        // Adiciona uma curtida ao comentário
+        this.likes++;
     }
 
-    public setId(value: string): void {
-        this.id = value
-    }
-
-    public getPostId(): string {
-        return this.post_id
-    }
-
-    public setPostId(value: string): void {
-        this.post_id = value
-    }
-
-    public getContent(): string {
-        return this.content
-    }
-
-    public setContent(value: string): void {
-        this.content = value
-    }
-
-    public getLikes(): number {
-        return this.likes
-    }
-
-    public setLikes(value: number): void {
-        this.likes = this.likes + value
-    }
-
-    public getDislikes(): number {
-        return this.dislikes
-    }
-
-    public setDislikes(value: number): void {
-        this.dislikes = this.dislikes + value
-    }
-
-    public addLike = (): void => {
-        this.likes++
-    }
-
-    public removeLike = (): void => {
-        this.likes--
-        if(this.likes === 0) {
-            this.likes = 0
+    public removeLike(): void {
+        // Remove uma curtida do comentário, se houver curtidas
+        if (this.likes > 0) {
+            this.likes--;
         }
     }
 
-    public addDislike = (): void => {
-        this.dislikes++
+    public addDislike(): void {
+        // Adiciona uma descurtida ao comentário
+        this.dislikes++;
     }
 
-    public removeDislike = (): void => {
-        this.dislikes--
-        if(this.dislikes === 0) {
-            this.dislikes = 0
+    public removeDislike(): void {
+        // Remove uma descurtida do comentário, se houver descurtidas
+        if (this.dislikes > 0) {
+            this.dislikes--;
         }
     }
-    
-    public getCreatedAt(): string {
-        return this.createdAt
-    }
-
-    public setCreatedAt(value: string): void {
-        this.createdAt = value
-    }
-
-    public getUpdatedAt(): string {
-        return this.updatedAt
-    }
-
-    public setUpdatedAt(value: string): void {
-        this.updatedAt = value
-    }
-
-    public getCreatorId(): string {
-        return this.creatorId
-    }
-
-    public setCreatorId(value: string): void {
-        this.creatorId = value
-    }
-
-    public getCreatorUsername(): string {
-        return this.creatorUsername
-    }
-
-    public setCreatorUsername(value: string): void {
-        this.creatorUsername = value
-    }
-
 
     public toDBModel(): CommentDB {
+        // Converte o objeto Comment para o formato do banco de dados
         return {
             id: this.id,
             post_id: this.post_id,
@@ -144,11 +76,12 @@ export class Comment {
             likes: this.likes,
             dislikes: this.dislikes,
             created_at: this.createdAt,
-            updated_at: this.updatedAt
-        }
+            updated_at: this.updatedAt,
+        };
     }
 
     public toBusinessModel(): CommentModel {
+        // Converte o objeto Comment para o modelo de negócios
         return {
             id: this.id,
             postId: this.post_id,
@@ -159,8 +92,8 @@ export class Comment {
             updatedAt: this.updatedAt,
             creator: {
                 id: this.creatorId,
-                username: this.creatorUsername
-            }
-            }
-        }
+                username: this.creatorUsername,
+            },
+        };
     }
+};

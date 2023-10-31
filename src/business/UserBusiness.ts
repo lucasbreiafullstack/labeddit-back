@@ -21,6 +21,7 @@ export class UserBusiness {
     private hashManager: HashManager
   ) { }
 
+  // Método para realizar o cadastro de um novo usuário
   public signup = async (
     input: SignupInputDTO
   ): Promise<SignupOutputDTO> => {
@@ -37,6 +38,7 @@ export class UserBusiness {
 
     const role = users.length === 0 ? USER_ROLES.ADMIN : USER_ROLES.NORMAL
 
+    // Cria um novo usuário
     const newUser = new User(
       id,
       username,
@@ -55,8 +57,10 @@ export class UserBusiness {
       created_at: newUser.getCreatedAt()
     }
 
+    // Insere o novo usuário no banco de dados
     await this.userDatabase.insertUser(newUserDB)
 
+    // Cria um token para o usuário recém-cadastrado
     const token = this.tokenManager.createToken({
       id: newUser.getId(),
       role: newUser.getRole(),
@@ -74,7 +78,7 @@ export class UserBusiness {
     return output
   }
 
-
+  // Método para realizar o login de um usuário
   public login = async (
     input: LoginInputDTO
   ): Promise<LoginOutputDTO> => {
@@ -90,6 +94,7 @@ export class UserBusiness {
       throw new BadRequestError("'Email' ou 'password' não conferem, tente novamente")
     }
 
+    // Cria um token para o usuário que fez login
     const token = this.tokenManager.createToken({
       id: userDB.id,
       role: userDB.role,
@@ -107,6 +112,7 @@ export class UserBusiness {
     return output
   }
 
+  // Método para obter informações de usuários
   public getUsers = async (
     input: GetUsersInputDTO
   ): Promise<GetUsersOutputDTO> => {
@@ -118,8 +124,10 @@ export class UserBusiness {
       throw new UnauthorizedError("Token inválido")
     }
 
+    // Busca os usuários no banco de dados
     let userFoundDB = await this.userDatabase.findUsers(username)
 
+    // Mapeia os usuários para o formato de saída
     const users = userFoundDB
       .map((userDB) => {
         const user = new User(
@@ -137,6 +145,7 @@ export class UserBusiness {
     return output
   }
 
+  // Método para editar um usuário por ID
   public editUserById = async (
     input: EditUserInputDTO
   ): Promise<EditUsertOutputDTO> => {
@@ -170,6 +179,7 @@ export class UserBusiness {
       throw new UnauthorizedError("Somente o dono desta conta pode editar os dados da mesma.")
     }
 
+    // Verifica se os novos valores de email, username ou senha são válidos e os atualiza, se fornecidos
     if(email !== undefined && email.length > 11) {
       email && user.setEmail(email)
     }
@@ -180,6 +190,7 @@ export class UserBusiness {
       password && user.setPassword(password)
     }
 
+    // Formata os dados atualizados do usuário
     const updatedUserDB: UserDB = {
       id: user.getId(),
       username: user.getUsername(),
@@ -189,6 +200,7 @@ export class UserBusiness {
       created_at: user.getCreatedAt()
     }
 
+    // Cria uma nova instância do usuário com os dados atualizados
     const newUser = new User(
       updatedUserDB.id,
       updatedUserDB.username,
@@ -198,12 +210,13 @@ export class UserBusiness {
       updatedUserDB.created_at
     )
 
+    // Atualiza os dados do usuário no banco de dados
     await this.userDatabase.updateUserById(idToEdit, updatedUserDB)
 
     return newUser.toBusinessModel()
-
   }
 
+  // Método para deletar um usuário por ID
   public deleteUserById = async (
     input: DeleteUserInputDTO
   ): Promise<DeleteUserOutputDTO> => {
@@ -218,6 +231,7 @@ export class UserBusiness {
       throw new UnauthorizedError("Token inválido")
     }
 
+    // Verifica se o usuário tem permissão para deletar a conta
     if (payload.role === USER_ROLES.ADMIN) {
       await this.userDatabase.deleteUserById(userToDeleteDB.id)
     } else if (userToDeleteDB.id === payload.id) {
@@ -231,5 +245,4 @@ export class UserBusiness {
     }
     return output
   }
-
-}
+};
