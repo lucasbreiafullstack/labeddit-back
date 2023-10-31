@@ -1,36 +1,83 @@
 import { UserDB } from "../models/User";
 import { BaseDatabase } from "./BaseDatabase";
 
-
 export class UserDatabase extends BaseDatabase {
-    TABLE_NAME = 'users'
 
-    public async findUsers(q:string|undefined):Promise<UserDB[]>{
-        let usersDB;
+  public static TABLE_USERS = "users"
 
-        if(q){
-            const result: UserDB[] = await BaseDatabase.connection(this.TABLE_NAME)
-                .where('name', 'LIKE', `%${q}%`);
-            
-            usersDB = result
-        }else{
-            const result: UserDB[] = await super.findAll();
+  public insertUser = async (
+    input: UserDB
+  ): Promise<void> => {
+    await BaseDatabase
+      .connection(UserDatabase.TABLE_USERS)
+      .insert(input)
+  }
 
-            usersDB = result
-        };
 
-        return usersDB
-    };
+  public findUsers = async (
+    q: string | undefined
+  ): Promise<UserDB[]> => {
 
-    public async findEmail(email:string):Promise<UserDB>{
-        const [result]:UserDB[] = await BaseDatabase.connection(this.TABLE_NAME)
-            .where({email});
+    let usersDB
+
+    if (q) {
+      const result: UserDB[] = await BaseDatabase
+        .connection(UserDatabase.TABLE_USERS)
+        .select()
+        .where("username", "LIKE", `%${q}%`)
+      
+        usersDB = result
+
+    } else {
+      const result: UserDB[] = await BaseDatabase
+        .connection(UserDatabase.TABLE_USERS)
+        .select()
         
-        return result
-    };
+      usersDB = result
+    }
 
-    public async createUser(newUser:UserDB):Promise<void>{
-        await BaseDatabase.connection(this.TABLE_NAME)
-            .insert(newUser)
-    };
+    return usersDB
+  }
+
+  public findUserById = async (
+    id: string
+  ): Promise<UserDB> => {
+    const [userDB]: UserDB[] = await BaseDatabase
+      .connection(UserDatabase.TABLE_USERS)
+      .select()
+      .where({ id })
+
+    return userDB
+  }
+
+  public findUserByEmail = async (
+    email: string
+  ): Promise<UserDB> => {
+    const [userDB]: UserDB[] = await BaseDatabase
+      .connection(UserDatabase.TABLE_USERS)
+      .select()
+      .where({ email })
+
+    return userDB
+  }
+
+  public updateUserById = async (
+    id: string, userDB: UserDB
+  ): Promise<void> => {
+    await BaseDatabase
+      .connection(UserDatabase.TABLE_USERS)
+      .update(userDB)
+      .where({ id })
+  }
+
+  public deleteUserById = async (
+    id: string
+  ): Promise<void> => {
+    await BaseDatabase
+      .connection(UserDatabase.TABLE_USERS)
+      .delete()
+      .where({ id })
+  }
+
+
 }

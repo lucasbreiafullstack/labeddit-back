@@ -1,80 +1,88 @@
-import { ZodError } from "zod";
-import { PostBusiness } from "../../../src/business/PostBusiness";
-import { CreatePostSchema } from "../../../src/dtos/post/CreatePost.dto"; 
-import { BadRequestError } from "../../../src/errors/BadRequestError";
-import { IdGeneratorMock } from "../../mocks/IdGenerator"; 
-import { LikesDislikesDatabaseMock } from "../../mocks/LikesDislikesDatabaseMock";
-import { PostDatabaseMock } from "../../mocks/PostDatabaseMock";
-import { TokenManagerMock } from "../../mocks/tokenManagerMock"; 
-import { CommentDatabaseMock } from "../../mocks/CommnetDatabaseMock"; 
+import { ZodError } from 'zod'
+import { PostBusiness } from "../../../src/business/PostBusiness"
+import { IdGeneratorMock } from "../../mocks/IdGeneratorMock"
+import { TokenManagerMock } from "../../mocks/TokenManagerMock"
+import { PostDatabaseMock } from "../../mocks/PostDataBaseMock"
+import { CreatePostSchema } from "../../../src/dtos/Posts/createPost.dto"
 
-describe('Tests for the CreatePost method', () => {
-    const postBusiness = new PostBusiness(
-        new PostDatabaseMock(),
-        new LikesDislikesDatabaseMock(),
-        new CommentDatabaseMock(),
-        new TokenManagerMock(),
-        new IdGeneratorMock()
-    );
+describe("Testando createPost", () => {
+  const postBusiness = new PostBusiness(
+    new PostDatabaseMock(),
+    new IdGeneratorMock(),
+    new TokenManagerMock()
+  )
 
-    test('Should return the content of the new post', async () => {
-        const input = CreatePostSchema.parse({
-            content: 'Create post test',
-            token: 'token-mock-adminUser'
-        });
-
-        const output = await postBusiness.createPost(input);
-
-        expect(output).toEqual({
-            content: 'Create post test'
-        })
-    });
-
-    test('Invalid token', async () => {
-        expect.assertions(2);
-        try {
-            const input = CreatePostSchema.parse({
-                content: 'Create post test',
-                token: 'token-mock'
-            });
-
-            await postBusiness.createPost(input);
-
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.statusCode).toBe(400);
-                expect(error.message).toBe('Invalid token.')
-            }
-        }
-    });
-
-    test('Zod validation for the content', async () => {
-        expect.assertions(1);
-        try {
-            const input = CreatePostSchema.parse({
-                content: '',
-                token: 'token-mock-normUser'
-            });
-
-            await postBusiness.createPost(input)
-
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
-    });
-
-    test('Zod validation for the token', async () => {
-        expect.assertions(1);
-        try {
-            const input = CreatePostSchema.parse({
-                content: 'Create post test',
-                token: 111
-            });
-
-            await postBusiness.createPost(input) 
-            
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
+  test("deve criar uma postagem nova", async () => {
+    const input = CreatePostSchema.parse({
+      content: "Nova postagem",
+      token: "token-mock-astrodev"
     })
+
+    const output = await postBusiness.createPost(input)
+
+    expect(output).toEqual({
+      id: "id-mock",
+      content: "Nova postagem",
+      likes: 0,
+      dislikes: 0,
+      comments: 0,
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+      creator: {
+        id: "id-mock-astrodev",
+        username: "Astrodev"
+      }
+    })
+  })
+
+  test("deve disparar erro na ausência de content", async () => {
+    try {
+      const input = CreatePostSchema.parse({
+        content: "",
+        token: "token-mock-astrodev"
+      })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        expect("content: String must contain at least 1 character(s)")
+      }
+    }
+  })
+
+  test("deve disparar erro na ausência de token", async () => {
+    try {
+      const input = CreatePostSchema.parse({
+        content: "aaaa",
+        token: ""
+      })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        expect("token: String must contain at least 1 character(s)")
+      }
+    }
+  })
+
+  test("deve disparar erro na ausência do input content", async () => {
+    try {
+      const input = CreatePostSchema.parse({
+        token: "token-mock-fulano"
+      })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        expect("content: Required")
+      }
+    }
+  })
+
+  test("deve disparar erro na ausência do input token", async () => {
+    try {
+      const input = CreatePostSchema.parse({
+        content: "aaaa"
+      })
+    } catch (error) {
+      if (error instanceof ZodError) {
+        expect("token: Required")
+      }
+    }
+  })
+
 })

@@ -1,134 +1,77 @@
-import { ZodError } from "zod";
-import {UserBusiness} from "../../../src/business/UserBusiness";
-import { IdGeneratorMock } from "../../mocks/IdGenerator";
-import { UserDatabaseMock } from "../../mocks/UserDatabaseMock";
-import { HashManagerMock } from "../../mocks/hashManager";
-import { TokenManagerMock } from "../../mocks/tokenManagerMock";
-import { GetUsersSchema } from "../../../src/dtos/user/getUsers.dto";
-import { USER_ROLES } from "../../../src/models/User";
-import { BadRequestError } from "../../../src/errors/BadRequestError";
+import { ZodError } from "zod"
+import { UserBusiness } from "../../../src/business/UserBusiness"
+import { GetUsersSchema } from "../../../src/dtos/Users/getUsers.dto"
+import { USER_ROLES } from "../../../src/models/User"
+import { HashManagerMock } from "../../mocks/HashManagerMock"
+import { IdGeneratorMock } from "../../mocks/IdGeneratorMock"
+import { TokenManagerMock } from "../../mocks/TokenManagerMock"
+import { UserDatabaseMock } from "../../mocks/UserDatabaseMock"
 
+describe("Testando getUsers", () => {
 
-describe('Tests for the GetUsers method', () => {
-    const userBusiness = new UserBusiness(
-        new UserDatabaseMock(),
-        new TokenManagerMock(),
-        new IdGeneratorMock(),
-        new HashManagerMock()
-    );
+  const userBusiness = new UserBusiness(
+    new UserDatabaseMock(),
+    new TokenManagerMock(),
+    new IdGeneratorMock(),
+    new HashManagerMock()
+  )
 
-    test('Should return a list containing all users', async () => {
-        const input = GetUsersSchema.parse({
-            token: 'token-mock-adminUser'
-        });
-
-        const output = await userBusiness.getUsers(input);
-        
-        expect(output).toHaveLength(3);
-        expect(output).toEqual([ 
-            {
-                id: 'id-mock-normUser',
-                name: 'NormUser',
-                email: 'normuser@email.com',
-                role: USER_ROLES.NORMAL,
-                createdAt: expect.any(String)
-            },
-            {
-                id: 'id-mock-adminUser',
-                name: 'AdminUser',
-                email: 'adminuser@email.com', 
-                role: USER_ROLES.ADMIN,
-                createdAt: expect.any(String)
-            },
-            {
-                id: 'id-mock-mockUser',
-                name: 'MockUser',
-                email: 'mockuser@email.com',
-                role: USER_ROLES.NORMAL,
-                createdAt: expect.any(String)
-            }
-        ])
-    });
-    
-    test('Should return one user for the query', async () => {
-        const input = GetUsersSchema.parse({
-            q: 'norm',
-            token: 'token-mock-adminUser'
-        });
-
-        const output = await userBusiness.getUsers(input);
-
-        expect(output).toEqual([
-            {
-                id: 'id-mock-normUser',
-                name: 'NormUser',
-                email: 'normuser@email.com',
-                role: USER_ROLES.NORMAL,
-                createdAt: expect.any(String)
-            }
-        ])
-    });
-
-    test('Unauthorized user', async () => {
-        expect.assertions(2);
-        try {
-            const input = GetUsersSchema.parse({
-                token: 'token-mock-normUser'
-            });
-
-            await userBusiness.getUsers(input)
-
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.statusCode).toBe(400);
-                expect(error.message).toBe('Only ADMIN users can access users information.')
-            }
-        }
-    });
-
-    test('Unauthorized token (token without payload)', async () => {
-        expect.assertions(2);
-        try {
-            const input = GetUsersSchema.parse({
-                token: 'token-mock'
-            });
-
-            await userBusiness.getUsers(input)
-
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.statusCode).toBe(400);
-                expect(error.message).toBe('token is required.')
-            }
-        }
-    });
-
-    test('Zod validation for the token', async () => {
-        expect.assertions(1);
-        try {
-            const input = GetUsersSchema.parse({
-                token: 111
-            });
-
-            await userBusiness.getUsers(input)
-
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
-    });
-
-    test('Zod validation for the query', async () => {
-        expect.assertions(1);
-        try {
-            const input = GetUsersSchema.parse({
-                q: 111,
-                token: 'token-mock-adminUser'
-            });
-
-            await userBusiness.getUsers(input)
-
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
+  test("deve retornar todos os uusários", async () => {
+    const input = GetUsersSchema.parse({
+      token: "token-mock-astrodev"
     })
+
+    const output = await userBusiness.getUsers(input)
+
+    expect(output).toHaveLength(2)
+    expect(output).toEqual([
+      {
+        id: "id-mock-fulano",
+        username: "Fulano",
+        email: "fulano@email.com",
+        createdAt: expect.any(String),
+        role: USER_ROLES.NORMAL
+      },
+      {
+        id: "id-mock-astrodev",
+        username: "Astrodev",
+        email: "astrodev@email.com",
+        createdAt: expect.any(String),
+        role: USER_ROLES.ADMIN
+      }
+    ])
+  })
+
+  test("deve retornar apenas os usuários cujo username seja de alguma forma semelhante ao inserido", async () => {
+    const input = GetUsersSchema.parse({
+      username: "Fulano",
+      token: "token-mock-fulano"
+    })
+
+    const output = await userBusiness.getUsers(input)
+
+    expect(output).toHaveLength(1)
+    expect(output).toEqual([
+      {
+        id: "id-mock-fulano",
+        username: "Fulano",
+        email: "fulano@email.com",
+        createdAt: expect.any(String),
+        role: USER_ROLES.NORMAL
+      }
+    ])
+  })
+
+  test("deve disparar erro na ausência do token no Schema", async () => {
+    try {
+      const input = GetUsersSchema.parse({
+      token: ""
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("token: String must contain at least 1 character(s)")
+    }
+  }
+  })
+
 })

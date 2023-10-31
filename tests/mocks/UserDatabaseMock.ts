@@ -1,36 +1,62 @@
-import { BaseDatabase } from "../../src/database/BaseDatabase";
-import { UserDB } from "../../src/models/User";
+import { USER_ROLES, UserDB } from "../../src/models/User";
+import { BaseDatabase } from "../../src/database/BaseDataBase";
 
+const usersMock: UserDB[] = [
+  {
+    id: "id-mock-fulano",
+    username: "Fulano",
+    email: "fulano@email.com",
+    password: "hash-mock-fulano", // senha = "fulano123"
+    created_at: new Date().toISOString(),
+    role: USER_ROLES.NORMAL
+  },
+  {
+    id: "id-mock-astrodev",
+    username: "Astrodev",
+    email: "astrodev@email.com",
+    password: "hash-mock-astrodev", // senha = "astrodev99"
+    created_at: new Date().toISOString(),
+    role: USER_ROLES.ADMIN
+  }
+]
 
 export class UserDatabaseMock extends BaseDatabase {
-    TABLE_NAME = 'users'
+  public static TABLE_USERS = "users"
 
-    public async findUsers(q:string|undefined):Promise<UserDB[]>{
-        let usersDB;
+  public insertUser = async (newUserDB: UserDB)
+  : Promise<void> => {
+    usersMock.push(newUserDB)
+  }
 
-        if(q){
-            const result: UserDB[] = await BaseDatabase.connection(this.TABLE_NAME)
-                .where('name', 'LIKE', `%${q}%`);
-            
-            usersDB = result
-        }else{
-            const result: UserDB[] = await super.findAll();
+  public async findUsers(
+    username: string | undefined
+  ): Promise<UserDB[]> {
+    if (username) {
+      return usersMock.filter(user =>
+        user.username.toLocaleLowerCase()
+          .includes(username.toLocaleLowerCase()))
 
-            usersDB = result
-        };
+    } else {
+      return usersMock
+    }
+  }
+  public findUserById = async (id: string)
+  : Promise<UserDB> => {
+    return usersMock.filter(user => user.id === id)[0]
+  }
 
-        return usersDB
-    };
+  public findUserByEmail = async (email: string)
+  : Promise<UserDB> => {
+    return usersMock.filter(user => user.email === email)[0]
+  }
 
-    public async findEmail(email:string):Promise<UserDB>{
-        const [result]:UserDB[] = await BaseDatabase.connection(this.TABLE_NAME)
-            .where({email});
-        
-        return result
-    };
+  public updateUserById = async (id: string, userDB: UserDB)
+  :Promise<void> => {}
 
-    public async createUser(newUser:UserDB):Promise<void>{
-        await BaseDatabase.connection(this.TABLE_NAME)
-            .insert(newUser)
-    };
+  public deleteUserById = async (id: string)
+  :Promise<void> => {}
+
+  public updateUserRoleById = async (id: string, userDB: UserDB)
+  :Promise<void> => {}
+
 }

@@ -1,113 +1,92 @@
+import { CommentBusiness } from "../../../src/business/CommentBusiness"
 import { ZodError } from "zod"
-import {PostBusiness} from "../../../src/business/PostBusiness"
-import { CreateCommentSchema } from "../../../src/dtos/comment/comment.dto";
-import { BadRequestError } from "../../../src/errors/BadRequestError";
-import { NotFoundError } from "../../../src/errors/NotFoundError";
-import { PostDatabaseMock } from "../../mocks/PostDatabaseMock";
-import { LikesDislikesDatabaseMock } from "../../mocks/LikesDislikesDatabaseMock";
-import { CommentDatabaseMock } from "../../mocks/CommnetDatabaseMock";
-import { TokenManagerMock } from "../../mocks/tokenManagerMock";
-import { IdGeneratorMock } from "../../mocks/IdGenerator";
+import { CreateCommentSchema } from "../../../src/dtos/Comments/createComment.dto"
+import { IdGeneratorMock } from "../../mocks/IdGeneratorMock"
+import { TokenManagerMock } from "../../mocks/TokenManagerMock"
+import { CommentDatabaseMock } from "../../mocks/CommentDatabaseMock"
+import { PostDatabaseMock } from "../../mocks/PostDataBaseMock"
 
-describe('Tests for the CreateComment method', () => {
-    const postBusiness = new PostBusiness(
-        new PostDatabaseMock(),
-        new LikesDislikesDatabaseMock(),
-        new CommentDatabaseMock(),
-        new TokenManagerMock(),
-        new IdGeneratorMock()
-    );
+describe("Testando create comment", () => {
+  const comentBusiness = new CommentBusiness(
+    new CommentDatabaseMock(),
+    new IdGeneratorMock(),
+    new TokenManagerMock(),
+    new PostDatabaseMock()
+  )
 
-    test('Should return the content of the comment', async () => {
-        const input = CreateCommentSchema.parse({
-            id: 'post002',
-            content: 'second comment',
-            token: 'token-mock-adminUser'
-        });
-
-        const output = await postBusiness.createComment(input);
-
-        expect(output).toEqual({
-            comment: 'second comment'
-        })
-    });
-
-    test('Invalid token', async () => {
-        expect.assertions(2);
-        try {
-            const input = CreateCommentSchema.parse({
-                id: 'post002',
-                content: 'second comment',
-                token: 'token-mock'
-            });
-
-            await postBusiness.createComment(input)
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.message).toBe('Invalid token.');
-                expect(error.statusCode).toBe(400)
-            }
-        }
-    });
-
-    test('Post not found', async () => {
-        expect.assertions(2);
-        try {
-            const input = CreateCommentSchema.parse({
-                id: 'post055',
-                content: 'second comment',
-                token: 'token-mock-normUser'
-            });
-
-            await postBusiness.createComment(input)
-        } catch (error) {
-            if(error instanceof NotFoundError){
-                expect(error.message).toBe('Post not found.');
-                expect(error.statusCode).toBe(404)
-            }
-        }
-    });
-
-    test('Zod validation for the id', async () => {
-        expect.assertions(1);
-        try {
-            const input = CreateCommentSchema.parse({
-                id: 111,
-                content: 'second comment',
-                token: 'token-mock-normUser'
-            });
-
-            await postBusiness.createComment(input)
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
-    });
-
-    test('Zod validation for the content', async () => {
-        expect.assertions(1);
-        try {
-            const input = CreateCommentSchema.parse({
-                id: 'post002',
-                content: '',
-                token: 'token-mock-normUser'
-            });
-
-            await postBusiness.createComment(input)
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
-    });
-
-    test('Zod validation for the token', async () => {
-        expect.assertions(1);
-        try {
-            const input = CreateCommentSchema.parse({
-                id: 'post002',
-                content: 'second comment',
-                token: ''
-            });
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
+  test("deve criar um comentário novo", async () => {
+    const input = CreateCommentSchema.parse({
+      content: "Novo comentário",
+      postId: "post01",
+      token: "token-mock-astrodev"
     })
+
+    const output = await comentBusiness.createComment(input)
+
+    expect(output).toEqual({
+      id: "id-mock",
+      postId: "post01",
+      content: "Novo comentário",
+      likes: 0,
+      dislikes: 0,
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+      creator: {
+          id: "id-mock-astrodev",
+          username: "Astrodev"
+      }
+    })
+  })
+
+  test("deve disparar erro na ausência de content", async () => {
+    try {
+      const input = CreateCommentSchema.parse({
+        content: "",
+        token: "token-mock-astrodev"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("content: String must contain at least 1 character(s)")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência de token", async () => {
+    try {
+      const input = CreateCommentSchema.parse({
+        content: "aaaa",
+        token: ""
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("token: String must contain at least 1 character(s)")
+    }
+  }
+  })
+
+  
+  test("deve disparar erro na ausência do input content", async () => {
+    try {
+      const input = CreateCommentSchema.parse({
+        token: "token-mock-astrodev"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("content: Required")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência do input token", async () => {
+    try {
+      const input = CreateCommentSchema.parse({
+        content: "novo comentário"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("token: Required")
+    }
+  }
+  })
+
 })

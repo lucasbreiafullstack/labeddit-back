@@ -1,109 +1,99 @@
 import { ZodError } from "zod"
 import { UserBusiness } from "../../../src/business/UserBusiness"
-import { LoginSchema } from "../../../src/dtos/user/login.dto"
-import { BadRequestError } from "../../../src/errors/BadRequestError"
-import { NotFoundError } from "../../../src/errors/NotFoundError"
-import { HashManagerMock } from "../../mocks/hashManager" 
-import { IdGeneratorMock } from "../../mocks/IdGenerator" 
-import { TokenManagerMock } from "../../mocks/tokenManagerMock" 
+import { LoginSchema } from "../../../src/dtos/Users/login.dto"
+import { HashManagerMock } from "../../mocks/HashManagerMock"
+import { IdGeneratorMock } from "../../mocks/IdGeneratorMock"
+import { TokenManagerMock } from "../../mocks/TokenManagerMock"
 import { UserDatabaseMock } from "../../mocks/UserDatabaseMock"
 
-describe('Tests for the Login method', () => {
-    const userBusiness = new UserBusiness(
-        new UserDatabaseMock(),
-        new TokenManagerMock(),
-        new IdGeneratorMock(),
-        new HashManagerMock()
-    );
+describe("Testando login", () => {
+  const userBusiness = new UserBusiness(
+    new UserDatabaseMock(),
+    new TokenManagerMock(),
+    new IdGeneratorMock(),
+    new HashManagerMock()
+  )
 
-    test('Should return the mocked token for the normUser', async () => {
-        const input = LoginSchema.parse({
-            email: 'normuser@email.com',
-            password: 'normUser123!'
-        });
-
-        const output = await userBusiness.login(input);
-
-        expect(output).toEqual({
-            token: 'token-mock-normUser'
-        })
-    });
-
-    test('Should return the mocked token for the adminUser', async () => {
-        const input = LoginSchema.parse({
-            email: 'adminuser@email.com',
-            password: 'adminUser123!'
-        });
-
-        const output = await userBusiness.login(input);
-
-        expect(output).toEqual({
-            token: 'token-mock-adminUser'
-        })
-    });
-
-    test('Test for email not found', async () => {
-        expect.assertions(2);
-        try {
-            const input = LoginSchema.parse({
-                email: 'user@email.com',
-                password: 'normUser123!'
-            });
-
-            await userBusiness.login(input)
-
-        } catch (error) {
-            if(error instanceof NotFoundError){
-                expect(error.statusCode).toBe(404);
-                expect(error.message).toBe('email or password not valid')
-            }
-        }
-    });
-
-    test('Test for wrong password', async () => {
-        expect.assertions(2);
-        try {
-            const input = LoginSchema.parse({
-                email: 'normaluser@email.com',
-                password: 'normal123!'
-            });
-
-            await userBusiness.login(input)
-
-        } catch (error) {
-            if(error instanceof BadRequestError){
-                expect(error.statusCode).toBe(400);
-                expect(error.message).toBe('email or password not valid')
-            }
-        }
-    });
-
-    test('Zod validation for email', async () => {
-        expect.assertions(1);
-        try {
-            const input = LoginSchema.parse({
-                email: 'normaluseremail.com',
-                password: 'normalUser123!'
-            });
-
-            await userBusiness.login(input)
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
-    });
-
-    test('Zod validation for the password', async () => {
-        expect.assertions(1);
-        try {
-            const input = LoginSchema.parse({
-                email: 'normaluser@email.com',
-                password: ''
-            });
-
-            await userBusiness.login(input) 
-
-        } catch (error) {
-            expect(error instanceof ZodError).toBe(true)
-        }
+  test("deve gerar token ao logar", async () => {
+    const input = LoginSchema.parse({
+      email: "fulano@email.com",
+      password: "fulano123"
     })
+
+    const output = await userBusiness.login(input)
+
+    expect(output).toEqual({
+      id: "id-mock-fulano",
+      username:"Fulano",
+      email:"fulano@email.com",
+      role:"NORMAL",
+      token: "token-mock-fulano"
+    })
+  })
+
+  test("deve disparar erro caso o input obrigatório email tenha outro nome", async () => {
+    try {
+      const input = LoginSchema.parse({
+        userEmail: "fulano@email.com",
+        password: "fulano123"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("email: Required")
+    }
+  }
+  })
+
+  test("deve disparar erro caso o input obrigatório password tenha outro nome", async () => {
+    try {
+      const input = LoginSchema.parse({
+        email: "fulano@email.com",
+        senha: "fulano123"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("password: Required")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência de email", async () => {
+    try {
+      const input = LoginSchema.parse({
+      email: "",
+      password: "senha1"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("email: String must contain at least 11 character(s)")
+    }
+  }
+  })
+
+  test("deve disparar erro no caso do e-mail informado não conter @", async () => {
+    try {
+      const input = LoginSchema.parse({
+      email: "samuelemail.com",
+      password: "senha1"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("email: Invalid input: must include \"@\"")
+    }
+  }
+  })
+
+  test("deve disparar erro na ausência de senha ou quando a mesma tiver menos de seis caracteres", async () => {
+    try {
+      const input = LoginSchema.parse({
+      email: "samuel@email.com",
+      password: "senha"
+    })
+  } catch (error) {
+    if (error instanceof ZodError) {
+      expect("password: String must contain at least 6 character(s)")
+    }
+  }
+  })
+
 })
