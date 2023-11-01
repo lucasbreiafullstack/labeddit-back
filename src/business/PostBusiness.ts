@@ -130,7 +130,7 @@ export class PostBusiness {
 
     // Verifica se o token é inválido
     if (payload === null) {
-      throw a UnauthorizedError("Token inválido")
+      throw new UnauthorizedError("Token inválido")
     }
 
     if (!idToEdit) {
