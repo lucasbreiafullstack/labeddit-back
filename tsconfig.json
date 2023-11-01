@@ -8,7 +8,10 @@
         "removeComments": true,
         "noImplicitAny": true,
         "esModuleInterop": true,
-        "strict": true
-      },
+        "strict": true,
+        "baseUrl": "./src",
+        "paths": {
+        "@database/*": ["database/*"],
+    }},
       "exclude": ["./tests/*"] 
-  }
+}
