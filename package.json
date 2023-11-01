@@ -18,10 +18,10 @@
     "zod": "^3.22.4"
   },
  "scripts": {
-		"start": "node ./build/index.js",
-		"build": "tsc",
-    "test": "jest",
-		"dev": "ts-node-dev ./src/index.ts"
+    "start": "node ./build/index.js",
+    "build": "tsc",
+    "dev": "ts-node-dev ./src/index.ts",
+    "test": "jest"
  },
   "dependencies": {
     "cors": "^2.8.5",
